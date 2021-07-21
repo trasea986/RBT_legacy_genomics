@@ -36,7 +36,16 @@ bio_layers <- crop(bio_layers, ext)
 plot(bio_layers$wc2.1_30s_bio_1)
 
 #extract values
-bio_values <- raster::extract(bio_layers, legacy_spatial)
+#method bilinear used to interpolate based on location within the cell and not just cell value
+bio_values <- extract(bio_layers, legacy_spatial, xy = TRUE, method = 'bilinear')
 
-#convert to dataframe
-bio_values <- as.data.frame(bio_values)
+#combine this with any other columns of env data
+#add back in the population and location information
+full_env <- cbind(legacy_df, bio_values)
+
+#x/y from bio_values and long/lat from legacy_df match (which is good) so going to delete the x and y
+full_env$x <- NULL
+full_env$y <- NULL
+
+#export
+write.csv(full_env, file = './outputs/full_env.csv', row.names = FALSE)
