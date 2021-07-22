@@ -60,15 +60,14 @@ nw_list <- list('ELEV',
                 'Flow_Aug',
                 'S1_93_11')
 
-example_rast <- rasterize(nw_lines_crop, bio1, field='ELEV', background = NA, touches = TRUE)
-example_rast <- project(example_rast, "+proj=longlat +datum=WGS84 +no_defs")
-plot(example_rast)
+nw_lines_crop_buffer <- buffer(nw_lines_crop, 1000)
 
 #rasterize the shapefile, reproject, and then extract
 norwest_sites <- lapply(nw_list, function(i){
-  tmp <- rasterize(nw_lines_crop, bio1, field=paste(i), background = NA, touches = TRUE)
+  tmp <- rasterize(nw_lines_crop_buffer, bio1, field=paste(i), background = NA)
   tmp <- project(tmp, "+proj=longlat +datum=WGS84 +no_defs")
-  terra::extract(tmp, legacy_spatial, xy = TRUE, method = 'bilinear')
+  tmp[tmp<(-20)] <- NA #remove missing data
+  terra::extract(tmp, legacy_spatial, xy = TRUE, method = 'simple', touches = TRUE, na.rm=TRUE)
 })
 
 #combine all the individual dataframes together
