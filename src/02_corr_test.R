@@ -16,10 +16,12 @@ full_env <- full_env[,5:ncol(full_env)]
 colnames(full_env)
 colnames(full_env) <- c('ELEV', 'CANOPY', 'SLOPE', 'PRECIP', 'CUMDRAINAG', 'FLOW_Aug', 'Stream_temp_93_11', 'Annual Mean Temperature', 'Mean Temperature of Warmest Quarter', 'Mean Temperature of Coldest Quarter', 'Annual Precipitation', 'Precipitation of Wettest Month', 'Precipitation of Driest Month', 'Precipitation Seasonality', 'Precipitation of Wettest Quarter', 'Precipitation of Driest Quarter', 'Precipitation of Warmest Quarter', 'Precipitation of Coldest Quarter', 'Mean Diurnal Range', 'Isothermality ', 'Temperature Seasonality', 'Max Temperature of Warmest Month', 'Min Temperature of Coldest Month', 'Temperature Annual Range', 'Mean Temperature of Wettest Quarter', 'Mean Temperature of Driest Quarter')
 
+#remove flow
+full_env$FLOW_Aug <- NULL
+
 #main correlation plot, then save it
 cor_full <- corr.test(full_env, method = "spearman", adjust = "none")
 cor_full$r[cor_full$p > 0.05] <- 0 #this puts blanks in for not significant correlations
-
 
 png('outputs/init_corr.png',   
     width     = 3.25,
@@ -54,7 +56,7 @@ dev.off()
 write.csv(env_cl, file = './outputs/env_final_matrix.csv', row.names = FALSE)
 
 #if wanting a df with the stream names included with the environmental variables
-env_final <- cbind(streams, env_cl)
+env_final <- cbind(Stream, env_cl)
 write.csv(env_final, file = './outputs/env_final_pops.csv', row.names = FALSE)
 
 
@@ -62,23 +64,20 @@ write.csv(env_final, file = './outputs/env_final_pops.csv', row.names = FALSE)
 
 
 # request to swap bio X with stream temp instead of air temp for obvious biological reasons
-env_final <- read.csv('./outputs/env_final_pops.csv')
+env_final_matrix <- read.csv('./outputs/env_final_pops.csv')
 
-env_final$Mean.Temperature.of.Warmest.Quarter <- NULL
-env_final <- cbind(env_final, norwest_df$S1_93_11)
-
-env_final_matrix <- env_final
-env_final_matrix$streams <- NULL
+env_final_matrix$Stream <- NULL
+env_final_matrix$stream_temp <- norwest_df$S1_93_11
 
 colnames(env_final_matrix)
-colnames(env_final_matrix) <- c('ELEV', 'SLOPE', 'CUMDRAINAG', 'FLOW_Aug',  'Precipitation Seasonality', 'Mean Diurnal Temperature Range', 'Isothermality', 'Temperature Seasonality', 'Stream_temp_93_11')
+colnames(env_final_matrix) <- c('ELEV', 'CANOPY', 'SLOPE', 'CUMDRAINAG',  'Precipitation Seasonality', 'Mean Diurnal Temperature Range', 'Isothermality', 'Min.Temperature of Coldest Month', 'Temperature Annual Range', 'Stream_temp_93_11')
 
 
 #retest correlation and save matrix + plot
 cl_cor <- corr.test(env_final_matrix, method = "spearman")
 
 
-png('outputs/final_corr_strem_swap.png',   
+png('outputs/final_corr_strem_swap.png',
     width     = 3.25,
     height    = 3.25,
     units     = "in",

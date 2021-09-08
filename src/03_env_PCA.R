@@ -9,14 +9,14 @@ library(ggrepel)
 library(cowplot)
 
 
+#three issues
+
 
 
 #first bring in the final output from 02_corr_test.R
 
 env_final <- read.csv('./outputs/env_final_pops_temp_swap.csv')
 
-##Shawn mentioned dropping Aug Flow due to lack of variation
-env_final <- select(env_final, -FLOW_Aug)
 
 #next is bring in the sample request file to add in ecotypes for color coding the PCA
 samples <- read.csv('./data/GEM3 Redband legacy sample request-090419-GIS.csv')
@@ -67,10 +67,10 @@ matrix <- env_final[, 3:10]
 
 pca1 <- PCA(matrix, graph = FALSE)
 #pull out percentages of variance for first four axes
-PCA1 <- 42.73
-PCA2 <- 28.00
-PCA3 <- 16.99
-PCA4 <- 5.64
+PCA1 <- 43.97
+PCA2 <- 28.50
+PCA3 <- 16.95
+PCA4 <- 5.29
 
 
 #pull in the first few PCAs
