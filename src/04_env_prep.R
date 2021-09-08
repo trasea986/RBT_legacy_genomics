@@ -25,7 +25,7 @@ env_final <- rbind(env_final[1,], env_final[2,], env_final[3,], env_final[4,], e
 
 
 #read in the data
-raw <- read.table("../data/Legacy02_analyze10.fz", header = FALSE, sep = " ")
+raw <- read.table("../data/Legacy02_analyze31.fz", header = FALSE, sep = " ")
 raw <- raw[,-16]
 
 #transpose
@@ -49,10 +49,8 @@ df <- cbind(pop = c('Little Jacks Cr',
             'Fawn Cr',
             'Mann Cr',
             'Trail Cr',
-            'S.F. Callahan Cr',
-            'Hayspur'), raw)
+            'S.F. Callahan Cr'), raw)
 
-df <- subset(df, pop!="Hayspur")
 
 saveRDS(df, file = "../outputs/allele_freq.RDS") 
 saveRDS(env_final, file = "../outputs/env_rda.RDS") 
