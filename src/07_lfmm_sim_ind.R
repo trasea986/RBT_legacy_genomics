@@ -22,20 +22,21 @@ Keithley <- allele_freq %>% slice(5)
 LittleWeser <- allele_freq %>% slice(6) 
 Dry <- allele_freq %>% slice(7)
 Fawn <- allele_freq %>% slice(8)
-Mann <- allele_freq %>% slice(9)
-Trail <- allele_freq %>% slice(10)
-Callahan <- allele_freq %>% slice(11)
+Mann1 <- allele_freq %>% slice(9)
+Mann2 <- allele_freq %>% slice(10)
+Trail <- allele_freq %>% slice(11)
+Callahan <- allele_freq %>% slice(12)
 
 
 print('sliced')
 
-plan(multisession, workers = 12) ## => parallelize on your local computer
+plan(multisession, workers = 10) ## => parallelize on your local computer
 
 
 
 print('starting loop')
 
-#only simulating 20 ind here due to really large sample sizes
+only simulating 20 ind here due to really large sample sizes
 
 start_time <- Sys.time()
 LJ <- list()
@@ -250,6 +251,17 @@ print(time)
 
 print('binding all together')
 start_time <- Sys.time()
+output_LJ <- fread("../outputs/LJ_sim.csv")
+output_BJ <- fread("../outputs/BJ_sim.csv")
+output_D <- fread("../outputs/D_sim.csv")
+output_W <- fread("../outputs/W_sim.csv")
+output_K <- fread("../outputs/K_sim.csv")
+output_LW <- fread("../outputs/LW_sim.csv")
+output_DR <- fread("../outputs/DR_sim.csv")
+output_FA <- fread("../outputs/FA_sim.csv")
+output_M <- fread("../outputs/M_sim.csv")
+output_TR <- fread("../outputs/TR_sim.csv")
+output_C <- fread("../outputs/C_sim.csv")
 listofdf <- c('output_LJ', 'output_BJ', 'output_D', 'output_W', 'output_K', 'output_LW', 'output_DR', 'output_FA', 'output_M', 'output_TR', 'output_C')
 
 gen_all_pop <- rbindlist(mget(listofdf), idcol = TRUE)

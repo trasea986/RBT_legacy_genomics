@@ -13,7 +13,7 @@ allele_freq <- as.matrix(allele_freq, ncolumns = ncol(allele_freq))
 env_mat <- read.csv('../outputs/env_rda.csv')
 env_mat$Stream <- as.character(env_mat$Stream)
 
-#remove ecotype and pop column to make matching matrix
+#remove ecotype and pop column to make matching matrix. also remove elevation due to R2 issue.
 env_mat <- env_mat[,-c(1:3)]
 
 #pairs.panels(env_mat, Scale = T)
@@ -26,13 +26,15 @@ rbt_rda <- vegan::rda(allele_freq ~ ., data = env_mat, Scale = T)
 rbt_rda
 
 #write rda object
-#saveRDS(rbt_rda, '../outputs/ots_rda.RDS')
+saveRDS(rbt_rda, '../outputs/rbt_rda.RDS')
 
-vegan::RsquareAdj(rbt_rda) #R squared values
+rbt_rsquare <- vegan::RsquareAdj(rbt_rda) #R squared values
 
-summary(rbt_rda)$concont #proportion of variance explaines by each axis
+write.csv(rbt_rsquare, '../outputs/rbt_rsquare.csv')
+
+rbt_prop_variance <- summary(rbt_rda)$concont #proportion of variance explaines by each axis
 #screeplot(ots.rda) #visualize the canconical eignevalues
-
+write.csv(rbt_prop_variance, '../outputs/rbt_prop_variance.csv')
 
 #Check the FULL RDA model for significance
 signif_full <- anova.cca(rbt_rda, parallel=getOption("mc.cores")) # default is permutation=999
@@ -48,7 +50,7 @@ write.csv(signif_axis, file = "../outputs/signif_axis.csv")
 #Find candidate SNPs: this part relies on knowledge of which axes are significant. 
 #Currently, the script is written assuming axes 1, 2, and 3 are significant
 load_rda <- summary(rbt_rda)$species[,1:3]
-hist(load_rda[,1], main="Loadings on RDA1")
+#hist(load_rda[,1], main="Loadings on RDA1")
 #hist(load.rda[,2], main="Loadings on RDA2")
 #hist(load.rda[,3], main="Loadings on RDA3") 
 
@@ -57,8 +59,10 @@ outliers <- function(x,z){
   x[x < lims[1] | x > lims[2]]               # locus names in these tails
 } #function to find the outlier SNPs
 
+saveRDS(load_rda, file = "../outputs/load_rda.RDS")
+
 #apply the outliers() function to each axis
-cand1 <- outliers(load_rda[,1],3) 
+cand1 <- outliers(load_rda[,1],4) #second number is number of stdeviations
 #cand2 <- outliers(load.rda[,2],3) 
 #cand3 <- outliers(load.rda[,3],3) 
 
@@ -93,7 +97,8 @@ for (i in 1:length(cand$snp)) {
 
 cand <- cbind.data.frame(cand,foo)  
 
-length(cand$snp[duplicated(cand$snp)]) #check for duplicate SNPs
+n_snps <- length(cand$snp[duplicated(cand$snp)]) #check for duplicate SNPs
+
 
 #foo <- cbind(cand$axis, duplicated(cand$snp)) 
 #table(foo[foo[,1]==1,2]) #check for duplicates on axis 1
@@ -120,6 +125,6 @@ colnames(cand)[14] <- "correlation"
 #table(cand$predictor) #lists top associations 
 
 #Write the output into a .csv
-write.csv(cand, "../outputs/RDA_cand_site.csv")
+write.csv(cand, "../outputs/RDA_cand.csv", row.names = FALSE)
 
 ###---End script part 2---###

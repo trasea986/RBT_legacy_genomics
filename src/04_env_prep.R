@@ -10,23 +10,23 @@ env_final <- env_final[!duplicated(env_final), ]
 #also remove the duplicated little jack's, keithley, and johnson
 env_final <- subset(env_final, Stream!="Little Jacks Creek -> Jacks Creek - HydroID: 6440" & Stream!="Keithly Creek -> Weiser River - HydroID: 10032" & Stream!="Johnson Creek -> North Fork Boise River - HydroID: 4458")
 
-#next pull out mann and average
-mann <- subset(env_final, Stream == "Hitt Creek -> Mann Creek - HydroID: 11616" | Stream == "Fourth Of July Creek -> Mann Creek - HydroID: 11629")
+#next pull out mann and average if using only one Mann allele freq
+# mann <- subset(env_final, Stream == "Hitt Creek -> Mann Creek - HydroID: 11616" | Stream == "Fourth Of July Creek -> Mann Creek - HydroID: 11629")
 
-mann <- colMeans(mann[sapply(mann, is.numeric)])
-mann <- c('Mann Creek Average', 'Cold Montane', mann)
-env_final <- rbind(env_final, mann)
+# mann <- colMeans(mann[sapply(mann, is.numeric)])
+# mann <- c('Mann Creek Average', 'Cold Montane', mann)
+# env_final <- rbind(env_final, mann)
 
 #remove old mann creek values
-env_final <- subset(env_final1, Stream!="Hitt Creek -> Mann Creek - HydroID: 11616" & Stream != "Fourth Of July Creek -> Mann Creek - HydroID: 11629")
+# env_final <- subset(env_final, Stream!="Hitt Creek -> Mann Creek - HydroID: 11616" & Stream != "Fourth Of July Creek -> Mann Creek - HydroID: 11629")
 
 # next step is to reorder to match the environmental data
-env_final <- rbind(env_final[1,], env_final[2,], env_final[3,], env_final[4,], env_final[5,], env_final[6,], env_final[7,], env_final[8,], env_final[11,], env_final[9,], env_final[10,])
+#env_final <- rbind(env_final[1,], env_final[2,], env_final[3,], env_final[4,], env_final[5,], env_final[6,], env_final[7,], env_final[8,], env_final[11,], env_final[9,], env_final[10,])
 
 
 #read in the data
-raw <- read.table("../data/Legacy02_analyze31.fz", header = FALSE, sep = " ")
-raw <- raw[,-16]
+raw <- read.table("../data/Legacy02_analyze01_Mann2.fz", header = FALSE, sep = " ")
+raw <- raw[,-15]
 
 #transpose
 raw <- t(raw)
@@ -47,7 +47,8 @@ df <- cbind(pop = c('Little Jacks Cr',
             'Little Weser Cr',
             'Dry Cr',
             'Fawn Cr',
-            'Mann Cr',
+            'Mann Cr1',
+            'Mann Cr2',
             'Trail Cr',
             'S.F. Callahan Cr'), raw)
 
