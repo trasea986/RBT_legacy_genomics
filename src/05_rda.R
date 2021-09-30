@@ -47,6 +47,12 @@ signif_axis #Check to see which axes have p = 0.05. Ideally this should match th
 saveRDS(signif_axis, file = "../outputs/signif_axis.RDS")
 write.csv(signif_axis, file = "../outputs/signif_axis.csv")
 
+#Check each term for significance
+signif_term <- anova.cca(rbt_rda, by="terms", parallel=getOption("mc.cores"))
+signif_term #Check to see which axes have p = 0.05. Ideally this should match the results in the screeplots
+saveRDS(signif_term, file = "../outputs/signif_term.RDS")
+write.csv(signif_term, file = "../outputs/signif_term.csv")
+
 #Find candidate SNPs: this part relies on knowledge of which axes are significant. 
 #Currently, the script is written assuming axes 1, 2, and 3 are significant
 load_rda <- summary(rbt_rda)$species[,1:3]
@@ -54,15 +60,16 @@ load_rda <- summary(rbt_rda)$species[,1:3]
 #hist(load.rda[,2], main="Loadings on RDA2")
 #hist(load.rda[,3], main="Loadings on RDA3") 
 
+saveRDS(load_rda, file = "../outputs/load_rda.RDS")
+
 outliers <- function(x,z){
   lims <- mean(x) + c(-1, 1) * z * sd(x)     # find loadings +/-z sd from mean loading     
   x[x < lims[1] | x > lims[2]]               # locus names in these tails
 } #function to find the outlier SNPs
 
-saveRDS(load_rda, file = "../outputs/load_rda.RDS")
 
 #apply the outliers() function to each axis
-cand1 <- outliers(load_rda[,1],4) #second number is number of stdeviations
+cand1 <- outliers(load_rda[,1],3.5) #second number is number of stdeviations
 #cand2 <- outliers(load.rda[,2],3) 
 #cand3 <- outliers(load.rda[,3],3) 
 
@@ -82,9 +89,7 @@ cand$snp <- as.character(cand$snp)
 
 
 
-
-
-######################
+###################### ID env associations
 
 foo <- matrix(nrow=(ncand), ncol=9)  # create 5 columns for 5 predictors
 colnames(foo) <- c("CANOPY","SLOPE","CUMDRAINAG","Precipitation.Seasonality","Mean.Diurnal.Temperature.Range","Isothermality","Min.Temperature.of.Coldest.Month","Temperature.Annual.Range","Stream_temp_93_11")
@@ -125,6 +130,14 @@ colnames(cand)[14] <- "correlation"
 #table(cand$predictor) #lists top associations 
 
 #Write the output into a .csv
-write.csv(cand, "../outputs/RDA_cand.csv", row.names = FALSE)
+write.csv(cand, "../outputs/RDA_all_SNP_cor.csv", row.names = FALSE)
+
+
+
+###################### ID env associations for every SNP for Manhattan plot
+
+
+
+
 
 ###---End script part 2---###
