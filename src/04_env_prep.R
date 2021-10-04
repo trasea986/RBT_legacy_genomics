@@ -26,7 +26,9 @@ env_final <- subset(env_final, Stream!="Little Jacks Creek -> Jacks Creek - Hydr
 
 #read in the data
 raw <- read.table("../data/Legacy02_analyze01_Mann2.fz", header = FALSE, sep = " ")
-raw <- raw[,-15]
+
+#remove blank row at the end. this needs to be changed to be number of pops + 1.
+raw <- raw[,-16]
 
 #transpose
 raw <- t(raw)
