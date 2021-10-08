@@ -11,6 +11,7 @@ env_final <- env_final[!duplicated(env_final), ]
 env_final <- subset(env_final, Stream!="Little Jacks Creek -> Jacks Creek - HydroID: 6440" & Stream!="Keithly Creek -> Weiser River - HydroID: 10032" & Stream!="Johnson Creek -> North Fork Boise River - HydroID: 4458")
 
 #next pull out mann and average if using only one Mann allele freq
+#this is one option. currently splitting mann creek was used
 # mann <- subset(env_final, Stream == "Hitt Creek -> Mann Creek - HydroID: 11616" | Stream == "Fourth Of July Creek -> Mann Creek - HydroID: 11629")
 
 # mann <- colMeans(mann[sapply(mann, is.numeric)])
@@ -24,7 +25,7 @@ env_final <- subset(env_final, Stream!="Little Jacks Creek -> Jacks Creek - Hydr
 #env_final <- rbind(env_final[1,], env_final[2,], env_final[3,], env_final[4,], env_final[5,], env_final[6,], env_final[7,], env_final[8,], env_final[11,], env_final[9,], env_final[10,])
 
 
-#read in the data
+#read in the genomic data
 raw <- read.table("../data/Legacy02_analyze01_Mann2.fz", header = FALSE, sep = " ")
 
 #remove blank row at the end. this needs to be changed to be number of pops + 1.

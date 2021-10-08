@@ -3,15 +3,9 @@
 library(tidyverse)
 library(FactoMineR)
 library(factoextra)
-#require(MASS)
 library(reshape2)
 library(ggrepel)
 library(cowplot)
-
-
-#three issues
-
-
 
 #first bring in the final output from 02_corr_test.R
 
