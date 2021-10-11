@@ -21,37 +21,45 @@ env_mat <- env_mat[,-c(1:3)]
 #add matching row names
 rownames(allele_freq) <- rownames(env_mat)
 
-#run rda
-rbt_rda <- vegan::rda(allele_freq ~ ., data = env_mat, Scale = T)
+allele_freq1 <- allele_freq[,1:500]
+
+rbt_pca <- rda(allele_freq1, scale=T)
+labels(rbt_pca)
+
+rbt_pca_PC1 <- scores(rbt_pca, choices=1, display="sites", scaling=0)
+
+rbt_rda <- vegan::rda(allele_freq ~ . + Condition(rbt_pca_PC1), data = env_mat, Scale = T)
+
 rbt_rda
 
 #write rda object
-saveRDS(rbt_rda, '../outputs/rbt_rda.RDS')
+#saveRDS(rbt_rda, '../outputs/rbt_prda.RDS')
 
 rbt_rsquare <- vegan::RsquareAdj(rbt_rda) #R squared values
-
-write.csv(rbt_rsquare, '../outputs/rbt_rsquare.csv')
+rbt_rsquare
+#write.csv(rbt_rsquare, '../outputs/prbt_rsquare.csv')
 
 rbt_prop_variance <- summary(rbt_rda)$concont #proportion of variance explaines by each axis
+rbt_prop_variance
 #screeplot(ots.rda) #visualize the canconical eignevalues
-write.csv(rbt_prop_variance, '../outputs/rbt_prop_variance.csv')
+#write.csv(rbt_prop_variance, '../outputs/prbt_prop_variance.csv')
 
 #Check the FULL RDA model for significance
 signif_full <- anova.cca(rbt_rda, parallel=getOption("mc.cores")) # default is permutation=999
 signif_full
-saveRDS(signif_full, file = "../outputs/signif_full.RDS")
+saveRDS(signif_full, file = "../outputs/psignif_full.RDS")
 
 #Check each constrained axis for significance
 signif_axis <- anova.cca(rbt_rda, by="axis", parallel=getOption("mc.cores"))
 signif_axis #Check to see which axes have p = 0.05. Ideally this should match the results in the screeplots
-saveRDS(signif_axis, file = "../outputs/signif_axis.RDS")
-write.csv(signif_axis, file = "../outputs/signif_axis.csv")
+saveRDS(signif_axis, file = "../outputs/psignif_axis.RDS")
+write.csv(signif_axis, file = "../outputs/psignif_axis.csv")
 
 #Check each term for significance
 signif_term <- anova.cca(rbt_rda, by="terms", parallel=getOption("mc.cores"))
 signif_term #Check to see which axes have p = 0.05. Ideally this should match the results in the screeplots
-saveRDS(signif_term, file = "../outputs/signif_term.RDS")
-write.csv(signif_term, file = "../outputs/signif_term.csv")
+saveRDS(signif_term, file = "../outputs/psignif_term.RDS")
+write.csv(signif_term, file = "../outputs/psignif_term.csv")
 
 #Find candidate SNPs: this part relies on knowledge of which axes are significant. 
 #Currently, the script is written assuming axes 1, 2, and 3 are significant
@@ -60,7 +68,7 @@ load_rda <- summary(rbt_rda)$species[,1:3]
 #hist(load.rda[,2], main="Loadings on RDA2")
 #hist(load.rda[,3], main="Loadings on RDA3") 
 
-saveRDS(load_rda, file = "../outputs/load_rda.RDS")
+saveRDS(load_rda, file = "../outputs/load_prda.RDS")
 
 outliers <- function(x,z){
   lims <- mean(x) + c(-1, 1) * z * sd(x)     # find loadings +/-z sd from mean loading     
@@ -130,4 +138,4 @@ colnames(cand)[14] <- "correlation"
 #table(cand$predictor) #lists top associations 
 
 #Write the output into a .csv
-write.csv(cand, "../outputs/RDA_all_SNP_cor.csv", row.names = FALSE)
+write.csv(cand, "../outputs/pRDA_all_SNP_cor.csv", row.names = FALSE)
