@@ -3,8 +3,39 @@ library("miceadds")
 library("data.table")
 #library("psych") if checking correlations again
 
+#read in the genomic data
+raw <- read.table("../data/Legacy02_analyze01_bottom90.fz", header = FALSE, sep = " ")
+
+#remove blank row at the end. this needs to be changed to be number of pops + 1.
+raw <- raw[,-16]
+
+#transpose
+raw <- t(raw)
+
+#create names from rows 1 to 3 anc reate column names
+my_names <- paste(raw[1,], raw[2,], raw[3,], sep = '_')
+my_names <- gsub(" ", "", my_names)
+colnames(raw) <- my_names
+
+#delete rows 1 to 3
+raw <- as.data.frame(raw[-c(1, 2, 3),])
+
+df <- cbind(pop = c('Little Jacks Cr',
+                    'Big Jacks Cr',
+                    'Duncan Cr',
+                    'Williams Creek',
+                    'Keithley Cr',
+                    'Little Weser Cr',
+                    'Dry Cr',
+                    'Fawn Cr',
+                    'Mann Cr1',
+                    'Mann Cr2',
+                    'Trail Cr',
+                    'S.F. Callahan Cr'), raw)
+fwrite(df, '../outputs/allele_freq_neutral.csv', row.names = FALSE)
+
 #Load allele frequency matrix
-allele_freq <- fread('../outputs/allele_freq.csv')
+allele_freq <- fread('../outputs/allele_freq_neutral.csv')
 
 allele_freq <- allele_freq[,-c(1)]
 allele_freq <- as.matrix(allele_freq, ncolumns = ncol(allele_freq))
@@ -16,33 +47,35 @@ env_mat$Stream <- as.character(env_mat$Stream)
 #remove ecotype and pop column to make matching matrix. also remove elevation due to R2 issue.
 env_mat <- env_mat[,-c(1:3)]
 
-#pairs.panels(env_mat, Scale = T)
-
 #add matching row names
 rownames(allele_freq) <- rownames(env_mat)
 
-allele_freq1 <- allele_freq[,1:500]
-
-rbt_pca <- rda(allele_freq1, scale=T)
-labels(rbt_pca)
+rbt_pca <- rda(allele_freq, scale=T)
 
 rbt_pca_PC1 <- scores(rbt_pca, choices=1, display="sites", scaling=0)
+
+#bring back in all snps
+#Load allele frequency matrix
+allele_freq <- fread('../outputs/allele_freq.csv')
+
+allele_freq <- allele_freq[,-c(1)]
+allele_freq <- as.matrix(allele_freq, ncolumns = ncol(allele_freq))
 
 rbt_rda <- vegan::rda(allele_freq ~ . + Condition(rbt_pca_PC1), data = env_mat, Scale = T)
 
 rbt_rda
 
 #write rda object
-#saveRDS(rbt_rda, '../outputs/rbt_prda.RDS')
+saveRDS(rbt_rda, '../outputs/rbt_prda.RDS')
 
 rbt_rsquare <- vegan::RsquareAdj(rbt_rda) #R squared values
 rbt_rsquare
-#write.csv(rbt_rsquare, '../outputs/prbt_rsquare.csv')
+write.csv(rbt_rsquare, '../outputs/prbt_rsquare.csv')
 
 rbt_prop_variance <- summary(rbt_rda)$concont #proportion of variance explaines by each axis
 rbt_prop_variance
 #screeplot(ots.rda) #visualize the canconical eignevalues
-#write.csv(rbt_prop_variance, '../outputs/prbt_prop_variance.csv')
+write.csv(rbt_prop_variance, '../outputs/prbt_prop_variance.csv')
 
 #Check the FULL RDA model for significance
 signif_full <- anova.cca(rbt_rda, parallel=getOption("mc.cores")) # default is permutation=999
@@ -138,4 +171,69 @@ colnames(cand)[14] <- "correlation"
 #table(cand$predictor) #lists top associations 
 
 #Write the output into a .csv
-write.csv(cand, "../outputs/pRDA_all_SNP_cor.csv", row.names = FALSE)
+write.csv(cand, "../outputs/pRDA_cand.csv", row.names = FALSE)
+
+
+#apply the outliers() function to each axis
+cand1 <- outliers(load_rda[,1],3.5) #second number is number of stdeviations
+#cand2 <- outliers(load.rda[,2],3) 
+#cand3 <- outliers(load.rda[,3],3) 
+
+ncand <- length(cand1) #+ length(cand2) + length(cand3)
+ncand #total number of candidate SNPs
+
+#Organzie the results into a datadram with the axis, SNP, laoding, a correlation with each environmental variable
+cand1 <- cbind.data.frame(rep(1,times=length(cand1)), names(cand1), unname(cand1))
+#cand2 <- cbind.data.frame(rep(2,times=length(cand2)), names(cand2), unname(cand2))
+#cand3 <- cbind.data.frame(rep(3,times=length(cand3)), names(cand3), unname(cand3))
+
+#this was originally chained where 2 pointed to 1, 3 pointed to 2, and then names
+colnames(cand1) <- c("axis","snp","loading")#<- colnames(cand2) <- colnames(cand3) 
+
+cand <- rbind(cand1) #, cand2, cand3)
+cand$snp <- as.character(cand$snp)
+
+
+
+###################### ID env associations
+
+foo <- matrix(nrow=(ncand), ncol=9)  # create 5 columns for 5 predictors
+colnames(foo) <- c("CANOPY","SLOPE","CUMDRAINAG","Precipitation.Seasonality","Mean.Diurnal.Temperature.Range","Isothermality","Min.Temperature.of.Coldest.Month","Temperature.Annual.Range","Stream_temp_93_11")
+
+for (i in 1:length(cand$snp)) {
+  nam <- cand[i,2]
+  snp.gen <- allele_freq[,nam]
+  foo[i,] <- apply(env_mat,2,function(x) cor(x,snp.gen))
+}
+
+cand <- cbind.data.frame(cand,foo)  
+
+n_snps <- length(cand$snp[duplicated(cand$snp)]) #check for duplicate SNPs
+
+
+#foo <- cbind(cand$axis, duplicated(cand$snp)) 
+#table(foo[foo[,1]==1,2]) #check for duplicates on axis 1
+#table(foo[foo[,1]==2,2]) #check for duplicates on axis 2
+#table(foo[foo[,1]==3,2]) #check for duplicates on axis 3
+
+cand <- cand[!duplicated(cand$snp),] # remove duplicate detections
+
+#To find which of the predictors each candidate SNP is most strongly correlated with:
+for (i in 1:length(cand$snp)) {
+  bar <- cand[i,]
+  cand[i,13] <- names(which.max(abs(bar[4:12]))) # gives the variable
+  cand[i,14] <- max(abs(bar[4:12]))              # gives the correlation
+}
+#note: the 4:8 are the columns where the environmental variables are, must manually adjust this for every dataset
+#can confirm through str(cand). MUST change cand[i,#] to specify the column right after col 8, 
+#which here is column 9, or else you get an error 
+#do the same thing for the correlation cand[ ]
+
+#assign column names
+colnames(cand)[13] <- "predictor"
+colnames(cand)[14] <- "correlation"
+
+#table(cand$predictor) #lists top associations 
+
+#Write the output into a .csv
+write.csv(cand, "../outputs/pRDA_all_SNP_corr.csv", row.names = FALSE)
