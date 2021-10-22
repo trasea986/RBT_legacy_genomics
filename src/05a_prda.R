@@ -171,11 +171,11 @@ colnames(cand)[14] <- "correlation"
 #table(cand$predictor) #lists top associations 
 
 #Write the output into a .csv
-write.csv(cand, "../outputs/pRDA_cand.csv", row.names = FALSE)
+write.csv(cand, "../outputs/pRDA_cand_cor.csv", row.names = FALSE)
 
 
 #apply the outliers() function to each axis
-cand1 <- outliers(load_rda[,1],3.5) #second number is number of stdeviations
+cand1 <- outliers(load_rda[,1],0) #second number is number of stdeviations
 #cand2 <- outliers(load.rda[,2],3) 
 #cand3 <- outliers(load.rda[,3],3) 
 
@@ -236,4 +236,4 @@ colnames(cand)[14] <- "correlation"
 #table(cand$predictor) #lists top associations 
 
 #Write the output into a .csv
-write.csv(cand, "../outputs/pRDA_all_SNP_corr.csv", row.names = FALSE)
+write.csv(cand, "../outputs/pRDA_all_SNP_cor.csv", row.names = FALSE)

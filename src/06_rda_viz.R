@@ -13,7 +13,7 @@ library(qvalue) #note: bioconductor package BiocManager::install("qvalue")
 
 # rda correlation plot ----------------------------------------------------
 #load in output files from rda
-df_cand <- read.csv("../outputs/RDA_cand_3.5.csv")
+df_cand <- read.csv("../outputs/RDA_cand_cor.csv")
 df_all <- read.csv("../outputs/RDA_all_SNP_cor.csv")
 
 #only select desired columns

@@ -9,11 +9,9 @@ library(qvalue) #note: bioconductor package BiocManager::install("qvalue")
 library(data.table)
 
 
-
-
 # rda correlation plot ----------------------------------------------------
 #load in output files from rda
-df_cand <- read.csv("../outputs/pRDA_cand_3.5.csv")
+df_cand <- read.csv("../outputs/pRDA_cand_cor.csv")
 df_all <- read.csv("../outputs/pRDA_all_SNP_cor.csv")
 
 #only select desired columns
@@ -162,7 +160,7 @@ rdadapt<-function(rda,K)
 }
 
 #look at inertia. potentially use k = 4... but only first axis significant so going with minimum needed (2)
-ggplot() +
+inertia <- ggplot() +
   geom_line(aes(x=c(1:length(rbt_rda$CCA$eig)), y=as.vector(rbt_rda$CCA$eig)), linetype="dotted",
             size = 1.5, color="darkgrey") +
   geom_point(aes(x=c(1:length(rbt_rda$CCA$eig)), y=as.vector(rbt_rda$CCA$eig)), size = 3,
@@ -170,6 +168,8 @@ ggplot() +
   scale_x_discrete(name = "Ordination axes", limits=c(1:9)) +
   ylab("Inertia") +
   theme_bw()
+
+ggsave(filename = "../outputs/figures/pRDA_inertia.png", plot = inertia, height = 6, width = 10, units = "in")
 
 res_rdadapt<-rdadapt(rbt_rda, 2)
 saveRDS(res_rdadapt, '../outputs/res_prdadapt.RDS')
@@ -220,7 +220,7 @@ df_ggplot <- df_pval_plot %>%
   mutate( BPcum=BP+tot)
 
 df_ggplot <- df_ggplot %>% filter (chr_name != "NW")
-print('Finished prepping ggplot file and formatting snp names')
+print('Finished prepping ggplot file and formatting snp names for p and q value plots')
 write.csv(df_ggplot, "../outputs/figures/final_prda_plot_pvals.csv", row.names=FALSE)
 
 axisdf = df_ggplot %>% 
@@ -272,3 +272,5 @@ man_plot <- ggplot(df_ggplot, aes(x=BPcum, y=-log10(q.values))) +
   )
 
 ggsave(filename = "../outputs/figures/pRDA_plot_q.png", plot = man_plot, height = 6, width = 10, units = "in")
+
+print('Script complete')
