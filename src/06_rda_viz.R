@@ -227,22 +227,25 @@ axisdf = df_ggplot %>%
   group_by(chr) %>% 
   summarize(center=( max(BPcum) + min(BPcum) ) / 2 )
 
+##instead of using BH and Bon lines, switched to the threshold that matches the 3.5 value. keeping code for now though. 3.5 (two-tailed p-value = 0.0005)
+
 #for pvalue lines, we can do the same calculations as lfmm
 ##calculate BH threshold + #Bonferroni correction
-bonferroni <- .05/(nrow(df_ggplot))
-print("Bonferroni criticla value at 0.05")
+#bonferroni <- .05/(nrow(df_ggplot))
+#print("Bonferroni criticla value at 0.05")
 
 #bh test for each variable
-criticalValue <- get_bh_threshold(df_ggplot$p.values, 0.05)
-print("BH criticla value at 0.05")
+#criticalValue <- get_bh_threshold(df_ggplot$p.values, 0.05)
+#print("BH criticla value at 0.05")
 
 
 ##main manhattan plot
 man_plot <- ggplot(df_ggplot, aes(x=BPcum, y=-log10(p.values))) +
   geom_point( aes(color=as.factor(chr)), alpha=0.8, size=1.3) +
   scale_color_manual(values = rep(c("darkgrey", "dodgerblue4"), 32 )) +
-  geom_hline(yintercept=-log10(bonferroni), color = "darkred") + #line for Bonferroni correction
-  geom_hline(yintercept=-log10(criticalValue), color = "blue") + #line for BH correction
+  #geom_hline(yintercept=-log10(bonferroni), color = "darkred") + #line for Bonferroni correction
+  #geom_hline(yintercept=-log10(criticalValue), color = "blue") + #line for BH correction
+  geom_hline(yintercept=-log10(0.0005), color = "blue") + #based on 3.5 value
   scale_x_continuous( label = axisdf$chr, breaks= axisdf$center, guide = guide_axis(n.dodge = 2)) +
   scale_y_continuous(expand = c(0, 0) ) +     # remove space between plot area and x axis
   ggtitle('RDA, Chi-squared p-values') +
@@ -254,7 +257,7 @@ man_plot <- ggplot(df_ggplot, aes(x=BPcum, y=-log10(p.values))) +
     panel.grid.minor.x = element_blank()
   )
 
-ggsave(filename = "../outputs/figures/RDA_plot_p.png", plot = man_plot, height = 6, width = 10, units = "in")
+ggsave(filename = "../outputs/figures/RDA_plot_p_35.png", plot = man_plot, height = 6, width = 10, units = "in")
 
 #can do the same with q values. note: not sure on the threshold here that would be appropriate?
 man_plot <- ggplot(df_ggplot, aes(x=BPcum, y=-log10(q.values))) +

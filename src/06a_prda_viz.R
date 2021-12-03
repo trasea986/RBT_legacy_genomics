@@ -241,8 +241,9 @@ print("BH criticla value at 0.05")
 man_plot <- ggplot(df_ggplot, aes(x=BPcum, y=-log10(p.values))) +
   geom_point( aes(color=as.factor(chr)), alpha=0.8, size=1.3) +
   scale_color_manual(values = rep(c("darkgrey", "dodgerblue4"), 32 )) +
-  geom_hline(yintercept=-log10(bonferroni), color = "darkred") + #line for Bonferroni correction
-  geom_hline(yintercept=-log10(criticalValue), color = "blue") + #line for BH correction
+  #geom_hline(yintercept=-log10(bonferroni), color = "darkred") + #line for Bonferroni correction
+  #geom_hline(yintercept=-log10(criticalValue), color = "blue") + #line for BH correction
+  geom_hline(yintercept=-log10(0.0005), color = "blue") + #based on 3.5 value
   scale_x_continuous( label = axisdf$chr, breaks= axisdf$center, guide = guide_axis(n.dodge = 2)) +
   scale_y_continuous(expand = c(0, 0) ) +     # remove space between plot area and x axis
   ggtitle('pRDA, Chi-squared p-values') +
@@ -254,7 +255,7 @@ man_plot <- ggplot(df_ggplot, aes(x=BPcum, y=-log10(p.values))) +
     panel.grid.minor.x = element_blank()
   )
 
-ggsave(filename = "../outputs/figures/pRDA_plot_p.png", plot = man_plot, height = 6, width = 10, units = "in")
+ggsave(filename = "../outputs/figures/pRDA_plot_p_35.png", plot = man_plot, height = 6, width = 10, units = "in")
 
 #can do the same with q values. note: not sure on the threshold here that would be appropriate?
 man_plot <- ggplot(df_ggplot, aes(x=BPcum, y=-log10(q.values))) +

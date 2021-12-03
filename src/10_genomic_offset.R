@@ -129,6 +129,9 @@ ext <- rast(xmin= (x_min - 0.5), xmax =(x_max + 0.5),
 
 #define crs of this raster
 crs(ext) <- crs(bio_layers245$wc2_15)
+ext <- setValues(ext, 1)
+
+writeRaster(ext, filename = "../outputs/extent.tif")
 
 #set up offset files
 offset245 <- as.data.frame(g_offset245)
@@ -170,4 +173,145 @@ offset_plot <- ggplot(offset, aes(x = Longitude, y = Latitude, color = offset)) 
   facet_grid(cols = vars(SSP)) +
   theme_classic(base_size = 16)
 
-ggsave('../outputs/offset_plot.tiff', plot = offset_plot, height = 8, width = 10, units = "in")
+ggsave('../outputs/figures/offset_plot.tiff', plot = offset_plot, height = 8, width = 10, units = "in")
+
+
+#one question here is what the maps may look like for the amount the environment is changing
+bio_files_present <- list.files(path = '../data/wc2.1_30s_bio/', pattern = '*.tif', all.files = TRUE, full.names = TRUE, recursive = TRUE)
+bio_layers_present <- rast(bio_files_present)
+#note that order here is slightly different because of the different names conventions of present vs. future data
+bio_layers_present <- bio_layers_present[[c(7, 12, 13, 16, 17)]]
+
+#rename the layers to match future scenarios
+names(bio_layers_present) <- c("wc2_15", "wc2_2",  "wc2_3",  "wc2_6",  "wc2_7")
+
+#for resolution shift, going to crop layers first to save on space
+ext <- rast('../outputs/extent.tif')
+bio_layers_present <- terra::crop(bio_layers_present, ext)
+bio_layers245 <- terra::crop(bio_layers245, ext)
+bio_layers585 <- terra::crop(bio_layers585, ext)
+
+#make resolution of present day match:
+bio_layers_present <- terra::resample(bio_layers_present, bio_layers585, method = 'bilinear') # resample output
+
+dif_245 <- bio_layers245 - bio_layers_present
+dif_585 <- bio_layers585 - bio_layers_present
+
+#now to turn the stack into a data frame, add the ssp to the dataframe, then rbind. facet rows by SSP and columns by environmental variable
+
+dif_245df <- as.data.frame(dif_245, xy = TRUE)
+dif_245df$ssp <- c('245')
+dif_585df <- as.data.frame(dif_585, xy = TRUE)
+dif_585df$ssp <- c('585')
+
+dif_comb <- rbind(dif_585df, dif_245df)
+
+#for plotting, will need to adjust so that the axis on 245 and 585 is the same and easily comparable
+# > max(dif_comb$wc2_15)
+# [1] 6.655718
+# > max(dif_comb$wc2_2)
+# [1] 0.2751064
+# > max(dif_comb$wc2_3)
+# [1] -1.325596
+# > max(dif_comb$wc2_6)
+# [1] 9.97856
+# > max(dif_comb$wc2_7)
+# [1] 5.951464
+# 
+# > min(dif_comb$wc2_15)
+# [1] -9.011786
+# > min(dif_comb$wc2_2)
+# [1] -1.171982
+# > min(dif_comb$wc2_3)
+# [1] -6.760864
+# > min(dif_comb$wc2_6)
+# [1] 4.47056
+# > min(dif_comb$wc2_7)
+# [1] -0.4212608
+
+#going to want to pull in other states, because the cropped area around the points isn't just focused on Idaho
+
+states_plot <- c("idaho", "washington", "oregon", "montana")
+dmap <- map("state", regions=states_plot, col="transparent", plot=FALSE, fill = TRUE)
+area_poly <- map2SpatialPolygons(dmap, IDs=dmap$names, , proj4string=CRS("+proj=longlat +datum=WGS84"))
+counties <- map_data("county")
+county_sub <- subset(counties, region %in% c("idaho", "washington", "oregon", "montana"))
+
+cc15 <- ggplot()+
+  geom_raster(data = dif_comb, aes(x = x, y = y, fill = wc2_15)) + 
+  scale_fill_gradient2(name = "Env Change Value \n (mm/m)", 
+                      low = "blue",high = "red", mid = "white",
+                      midpoint = 0,
+                      guide = "colourbar",
+                      limits = c(-9.1, 6.7)) +
+  geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
+  geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
+  geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude)) +
+  facet_grid(cols = vars(ssp)) +
+  coord_cartesian(xlim = c(-120, -113), ylim = c(42, 49)) +
+  ggtitle("Precipitation Seasonality (Coefficient of Variation)") +
+  theme_classic(base_size = 16)
+ggsave('../outputs/figures/climate_change_plot_15.png', plot = cc15, height = 8, width = 10, units = "in")
+
+cc2 <- ggplot()+
+  geom_raster(data = dif_comb, aes(x = x, y = y, fill = wc2_2)) + 
+  scale_fill_gradient2(name = "Env Change Value \n (1/10 degree Celsius)", 
+                       low = "blue",high = "red", mid = "white",
+                       midpoint= 0,
+                       guide = "colourbar",
+                      limits = c(-1.2, 0.3)) +
+  geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
+  geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
+  geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude)) +
+  facet_grid(cols = vars(ssp)) +
+  coord_cartesian(xlim = c(-120, -113), ylim = c(42, 49)) +
+  ggtitle("Mean Diurnal Range") +
+  theme_classic(base_size = 16)
+ggsave('../outputs/figures/climate_change_plot_2.png', plot = cc2, height = 8, width = 10, units = "in")
+
+cc3 <- ggplot()+
+  geom_raster(data = dif_comb, aes(x = x, y = y, fill = wc2_3)) + 
+  scale_fill_gradient2(name = "Env Change Value \n (1/10 degree Celsius)", 
+                       low = "blue",high = "red", mid = "white",
+                       midpoint = 0,
+                       guide = "colourbar",
+                      limits = c(-7, 0)) +
+  geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
+  geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
+  geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude)) +
+  facet_grid(cols = vars(ssp)) +
+  coord_cartesian(xlim = c(-120, -113), ylim = c(42, 49)) +
+  ggtitle("Isothermality") +
+  theme_classic(base_size = 16)
+ggsave('../outputs/figures/climate_change_plot_3.png', plot = cc3, height = 8, width = 10, units = "in")
+
+cc6 <- ggplot()+
+  geom_raster(data = dif_comb, aes(x = x, y = y, fill = wc2_6)) + 
+  scale_fill_gradient2(name = "Env Change Value \n (1/10 degree Celsius)", 
+                       low = "white ",high = "red",
+                       guide = "colourbar",
+                      limits = c(0, 10)) +
+  geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
+  geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
+  geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude)) +
+  facet_grid(cols = vars(ssp)) +
+  coord_cartesian(xlim = c(-120, -113), ylim = c(42, 49)) +
+  ggtitle("Min Temperature of Coldest Month") +
+  theme_classic(base_size = 16)
+ggsave('../outputs/figures/climate_change_plot_6.png', plot = cc6, height = 8, width = 10, units = "in")
+
+cc7 <- ggplot()+
+  geom_raster(data = dif_comb, aes(x = x, y = y, fill = wc2_7)) + 
+  scale_fill_gradient2(name = "Env Change Value  \n (1/10 degree Celsius)", 
+                       low = "blue",high = "red", mid = "white",
+                       midpoint = 0,
+                       guide = "colourbar",
+                      limits = c(-0.5, 6)) +
+  geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
+  geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
+  geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude)) +
+  facet_grid(cols = vars(ssp)) +
+  coord_cartesian(xlim = c(-120, -113), ylim = c(42, 49)) +
+  ggtitle("Temperature Annual Range") +
+  theme_classic(base_size = 16)
+ggsave('../outputs/figures/climate_change_plot_7.png', plot = cc7, height = 8, width = 10, units = "in")
