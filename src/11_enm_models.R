@@ -93,7 +93,7 @@ bio_layers585 <- terra::crop(bio_layers585, ext_enm)
 bio_layers_present <- terra::resample(bio_layers_present, bio_layers585, method = 'bilinear')
 
 #quick check of points on the raster
-plot(bio_layers_present[[1]])
+plot(bio_layers_present[[2]])
 points(points, col = "blue", cex = 1.5)
 
 #give java extra memory
@@ -348,10 +348,8 @@ ENM_vs_Offset <- ggplot(off_enm, aes(x = enm_change, y = offset, color = SSP)) +
   scale_color_manual(values = c('blue', 'darkgreen'))+
   xlab('Change in ENM Value') +
   ylab('Genetic Offset') +
-  theme_classic(base_size = 14)
-
-ggsave('../outputs/figures/enm_offset_compare.png', plot = ENM_vs_Offset, height = 6, width = 6, units = "in")
-
+  theme_classic(base_size = 14) +
+  theme(legend.position = "none")
 
 #now to get a sense for the most imperiled based off of each metric
 #keepin in mind higher offset is bad and lower enm is bad
@@ -366,11 +364,28 @@ colnames(rank_change)[8] <- "Pop"
 
 write.csv(rank_change, "../outputs/enm_offset_change_sites.csv", row.names = FALSE)
 
-ENM_vs_Offset <- ggplot(rank_change, aes(x = rank_offset, y = rank_enm, color = SSP)) +
+ENM_vs_Offset_rank <- ggplot(rank_change, aes(x = rank_offset, y = rank_enm, color = SSP)) +
   geom_point(size = 3, aes(shape= SSP)) +
   scale_color_manual(values = c('blue', 'darkgreen'))+
   xlab('Ranked Change in ENM Value') +
   ylab('Ranked Genetic Offset') +
-  theme_classic(base_size = 14)
+  theme_classic(base_size = 14) +
+  theme(legend.position = "none")
 
-ggsave('../outputs/figures/enm_offset_compare_rank.png', plot = ENM_vs_Offset, height = 6, width = 6, units = "in")
+legend_compare <- get_legend(ggplot(rank_change, aes(x = rank_offset, y = rank_enm, color = SSP)) +
+                              geom_point(size = 3, aes(shape= SSP)) +
+                              scale_color_manual(values = c('blue', 'darkgreen'))+
+                              xlab('Ranked Change in ENM Value') +
+                              ylab('Ranked Genetic Offset') +
+                              theme_classic(base_size = 14) +
+                              theme(legend.position = "right"))
+
+plot_final_compare <- plot_grid(ENM_vs_Offset, ENM_vs_Offset_rank, legend_compare, ncol = 3, rel_widths = c(1,1,.3))
+
+
+ggsave('../outputs/figures/enm_offset_compare.png', plot = plot_final_compare, height = 6, width = 10, units = "in")
+
+#other change stats
+#average genetic offset
+
+#average ENM change value across SSPs
