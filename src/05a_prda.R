@@ -1,7 +1,7 @@
 library("vegan")
 library("miceadds")
 library("data.table")
-#library("psych") if checking correlations again
+library("BiodiversityR") #for pca axis significance based on broken stick
 
 #read in the genomic data
 raw <- read.table("../data/Legacy02_analyze01_bottom90.fz", header = FALSE, sep = " ")
@@ -51,6 +51,8 @@ env_mat <- env_mat[,-c(1:3)]
 rownames(allele_freq) <- rownames(env_mat)
 
 rbt_pca <- rda(allele_freq, scale=T)
+
+pca_sig <- PCAsignificance(pca,axes=8)
 
 rbt_pca_PC1 <- scores(rbt_pca, choices=1, display="sites", scaling=0)
 

@@ -119,7 +119,7 @@ plot_title <- paste("LFMM, K=9,", df_ggplot[1,3])
 man_plot <- ggplot(df_ggplot, aes(x=BPcum, y=-log10(pval))) +
   geom_point( aes(color=as.factor(chr)), alpha=0.8, size=1.3) +
   scale_color_manual(values = rep(c("darkgrey", "dodgerblue4"), 32 )) +
-  geom_hline(yintercept=-log10(bonferroni), color = "darkred") + #line for Bonferroni correction
+  #geom_hline(yintercept=-log10(bonferroni), color = "darkred") + #line for Bonferroni correction
   geom_hline(yintercept=-log10(criticalValue), color = "blue") + #line for BH correction
   scale_x_continuous( label = axisdf$chr, breaks= axisdf$center, guide = guide_axis(n.dodge = 2)) +
   scale_y_continuous(expand = c(0, 0) ) +     # remove space between plot area and x axis
