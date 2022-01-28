@@ -117,9 +117,18 @@ bio_layers245 <- stack(bio_layers245)
 bio_layers585 <- stack(bio_layers585)
 
 #look and export plots
-plot(bio_layers585)
-plot(bio_layers245)
-plot(bio_layers_present)
+#little convoluted with how I am doing names here, because the name change was requested in writing steps, and don't want to mess up anything downstream
+bio_layers585_plot <- bio_layers585
+bio_layers245_plot <- bio_layers245
+bio_layers_present_plot <-bio_layers_present
+
+names(bio_layers585_plot) <- c("Precipitation Seasonality", "Mean Diurnal Temp Range",  "Isothermality",  "Min Temp of Coldest Month",  "Temp Annual Range")
+names(bio_layers245_plot) <- c("Precipitation Seasonality", "Mean Diurnal Temp Range",  "Isothermality",  "Min Temp of Coldest Month",  "Temp Annual Range")
+names(bio_layers_present_plot) <- c("Precipitation Seasonality", "Mean Diurnal Temp Range", "Isothermality", "Min Temp of Coldest Month",  "Temp Annual Range")
+
+plot(bio_layers585_plot)
+plot(bio_layers245_plot)
+plot(bio_layers_present_plot)
 
 enm_model <- 
   maxent(x=bio_layers_present,

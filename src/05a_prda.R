@@ -52,7 +52,7 @@ rownames(allele_freq) <- rownames(env_mat)
 
 rbt_pca <- rda(allele_freq, scale=T)
 
-pca_sig <- PCAsignificance(pca,axes=8)
+pca_sig <- PCAsignificance(rbt_pca,axes=20)
 
 rbt_pca_PC1 <- scores(rbt_pca, choices=1, display="sites", scaling=0)
 
