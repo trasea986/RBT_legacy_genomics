@@ -130,6 +130,41 @@ plot(bio_layers585_plot)
 plot(bio_layers245_plot)
 plot(bio_layers_present_plot)
 
+#another option is to extract values for all of these at the site locations and present in a table
+
+#next is to load in legacy sites and extract environmental variables from world clim
+legacy_df <- read.csv('../data/legacy_data_formatted.csv')
+
+#remove duplicate rows
+legacy_df <- legacy_df[!duplicated(legacy_df), ]
+
+#also remove the duplicated little jack's, keithley, and johnson
+legacy_df <- subset(legacy_df, Stream!="Little Jacks Creek -> Jacks Creek - HydroID: 6440" & Stream!="Keithly Creek -> Weiser River - HydroID: 10032" & Stream!="Johnson Creek -> North Fork Boise River - HydroID: 4458")
+
+#remove the hatchery and remove lower dry creek
+legacy_df <- legacy_df[-c(7, 14),]
+
+#convert to spatial
+legacy_spatial <- vect(legacy_df, geom=c("Longitude", "Latitude"), crs=projection)
+
+bio_layers_present_plot <- rast(bio_layers_present_plot)
+bio_layers245_plot <- rast(bio_layers245_plot)
+bio_layers585_plot <- rast(bio_layers585_plot)
+
+enm_env_values_present <- terra::extract(bio_layers_present_plot, legacy_spatial, method = 'simple')
+enm_env_values_245 <- terra::extract(bio_layers245_plot, legacy_spatial, method = 'simple')
+enm_env_values_585 <- terra::extract(bio_layers585_plot, legacy_spatial, method = 'simple')
+
+env_at_points <- cbind(legacy_df[,1], enm_env_values_present, enm_env_values_245, enm_env_values_585)
+
+env_at_points$ID <- NULL
+env_at_points$ID <- NULL
+env_at_points$ID <- NULL
+
+names(env_at_points) <- c("Stream", "Present Precipitation Seasonality", "Present Mean Diurnal Temp Range", "Present Isothermality", "Present Min Temp of Coldest Month",  "Present Temp Annual Range",  "245 Precipitation Seasonality", "245 Mean Diurnal Temp Range", "245 Isothermality", "245 Min Temp of Coldest Month",  "245 Temp Annual Range",  "585 Precipitation Seasonality", "585 Mean Diurnal Temp Range", "585 Isothermality", "585 Min Temp of Coldest Month",  "585 Temp Annual Range")
+
+write.csv(env_at_points, "../outputs/enm/env_at_points.csv", row.names = FALSE)
+
 enm_model <- 
   maxent(x=bio_layers_present,
          p=as.data.frame(points),
