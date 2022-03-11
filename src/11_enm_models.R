@@ -20,6 +20,8 @@ library(ggrepel)
 library(SDMtune)
 library(ENMeval)
 library(dismo)
+library(rmaxent) #if needing to re-load maxent dir
+library(ggnewscale)
 
 #pull in template
 #create list of env data for ind bioclim files 
@@ -126,9 +128,10 @@ names(bio_layers585_plot) <- c("Precipitation Seasonality", "Mean Diurnal Temp R
 names(bio_layers245_plot) <- c("Precipitation Seasonality", "Mean Diurnal Temp Range",  "Isothermality",  "Min Temp of Coldest Month",  "Temp Annual Range")
 names(bio_layers_present_plot) <- c("Precipitation Seasonality", "Mean Diurnal Temp Range", "Isothermality", "Min Temp of Coldest Month",  "Temp Annual Range")
 
-plot(bio_layers585_plot)
-plot(bio_layers245_plot)
-plot(bio_layers_present_plot)
+#plots for checking names
+#plot(bio_layers585_plot)
+#plot(bio_layers245_plot)
+#plot(bio_layers_present_plot)
 
 #another option is to extract values for all of these at the site locations and present in a table
 
@@ -146,6 +149,21 @@ legacy_df <- legacy_df[-c(7, 14),]
 
 #convert to spatial
 legacy_spatial <- vect(legacy_df, geom=c("Longitude", "Latitude"), crs=projection)
+
+#add ecotone into the original legacy_df for maps below
+legacy_df$Ecotype <- c(
+  'Desert', #"Little Jacks Cr-Bruneau drainage"                       
+  'Desert', #"Big Jacks Creek -> Jacks Creek - HydroID: 6439"
+  'Desert', #"Duncan Creek -> Big Jacks Creek - HydroID: 6563" 
+  'Desert', #"Williams Creek -> Jordan Creek - HydroID: 11418" 
+  'Cool Montane', # "Keithley Cr-Weiser drainage"                            
+  'Cool Montane', #"Little Weiser River -> Weiser River - HydroID: 9840"    
+  'Cool Montane', #"Dry Creek -> Boise River - HydroID: 8001"               
+  'Cold Montane', #"Fawn Cr-NF Payette"                                     
+  'Cold Montane', #"Hitt Creek -> Mann Creek - HydroID: 11616"              
+  'Cold Montane', #"Fourth Of July Creek -> Mann Creek - HydroID: 11629"    
+  'Cool Montane', #"Trail Creek -> Deep Creek - HydroID: 8119"              
+  'Cold Montane') #"South Callahan Creek -> Callahan Creek - HydroID: 6553"
 
 bio_layers_present_plot <- rast(bio_layers_present_plot)
 bio_layers245_plot <- rast(bio_layers245_plot)
@@ -187,11 +205,17 @@ enm_model <-
            'replicatetype=crossvalidate'),
          path = '../outputs/enm')
 
+
+
 #determine which model had the best AUC, note that first in sequence is 0
 colnames(as.data.frame(enm_model@results))[max.col(as.data.frame(enm_model@results)[c("Test.AUC"),],ties.method="first")]
 
 #species_7 model is best
 #extract the model
+
+#next line loads in the maxent object if no  longer avalable in the workspace
+#model_7 <- import_maxent(dir = '../outputs/enm', lambdas = 'species_7.lambdas', html = 'species_7.html') #this package can't do replicates, so make sure to figure out the best model below before clearing the maxent object (or save the R object of all of the replicates)
+
 model_7 <- enm_model@models[[8]]
 enm_results <- enm_model@models[[8]]@results
 
@@ -239,21 +263,28 @@ area_poly <- map2SpatialPolygons(dmap, IDs=dmap$names, , proj4string=CRS("+proj=
 counties <- map_data("county")
 county_sub <- subset(counties, region %in% c("idaho", "washington", "oregon", "montana"))
 
-#plot of present
+#plot of present  
 present_enm <- ggplot() + 
   geom_raster(data = present_df, aes(x = x, y = y, fill = layer)) + 
   scale_fill_gradient2("ENM Value",
-                       low = 'white', high = 'blue4',
+                       low = 'white', high = 'gray35',
                        na.value = NA) +
   geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
   geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
-  geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude), size = 3, color = "yellow") +
   xlab("Longitude") +
   ylab("Latitude") +
-  ggtitle("Present") +
-  coord_cartesian(xlim = c(-120, -113), ylim = c(42, 49)) +
+  #ggtitle("Present") +
+  coord_fixed(xlim = c(-120, -113), ylim = c(42, 49), clip = "on")+
   theme_classic(base_size = 15) +
-  theme(legend.position = "right")
+  theme(legend.position = "right", panel.border = element_rect(color = "black",
+                                                                       fill = NA,
+                                                                       size = 1))
+
+#add points and introduce a new scale
+present_enm <- present_enm +
+  new_scale("fill") +
+  geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude, fill = Ecotype), size = 4, shape = 21, color = 'white') +
+  scale_fill_manual(values = c('darkblue', 'darkgreen', 'darkred')) 
 
 ggsave('../outputs/figures/present_enm.png', plot = present_enm, height = 8, width = 8, units = "in")
 
@@ -261,48 +292,55 @@ ggsave('../outputs/figures/present_enm.png', plot = present_enm, height = 8, wid
 plot_245 <- ggplot() + 
   geom_raster(data = predict_245_df, aes(x = x, y = y, fill = layer)) + 
   scale_fill_gradient2("ENM Value",
-                       low = 'white', high = 'blue4',
+                       low = 'white', high = 'gray35',
                        na.value = NA, limits=c(0, 1)) +
   geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
   geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
-  geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude), size = 3, color = "yellow") +
+  new_scale("fill") +
+  geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude, fill = Ecotype), size = 4, shape = 21, color = 'white') +
+  scale_fill_manual(values = c('darkblue', 'darkgreen', 'darkred')) +
   xlab("Longitude") +
   ylab("Latitude") +
   ggtitle("SSP245") +
-  coord_cartesian(xlim = c(-120, -113), ylim = c(42, 49)) +
+  coord_fixed(xlim = c(-120, -113), ylim = c(42, 49), clip = "on")+
   theme_classic(base_size = 15) +
-  theme(legend.position = "none")
+  theme(legend.position = "none", panel.border = element_rect(color = "black",
+                                                               fill = NA,
+                                                               size = 1))
 
 plot_585 <- ggplot() + 
   geom_raster(data = predict_585_df, aes(x = x, y = y, fill = layer)) + 
   scale_fill_gradient2("ENM Value",
-                       low = 'white', high = 'blue4',
+                       low = 'white', high = 'grey35',
                        na.value = NA, limits=c(0, 1)) +
   geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
   geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
-  geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude), size = 3, color = "yellow") +
+  new_scale("fill") +
+  geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude, fill = Ecotype), size = 4, shape = 21, color = 'white') +
+  scale_fill_manual(values = c('darkblue', 'darkgreen', 'darkred')) +
   xlab("Longitude") +
   ylab("Latitude") +
   ggtitle("SSP585") +
-  coord_cartesian(xlim = c(-120, -113), ylim = c(42, 49)) +
+  coord_fixed(xlim = c(-120, -113), ylim = c(42, 49), clip = "on")+
   theme_classic(base_size = 15) +
-  theme(legend.position = "none")
+  theme(legend.position = "none", panel.border = element_rect(color = "black",
+                                                               fill = NA,
+                                                               size = 1))
 
 #get legend from above
 legend_enm <- get_legend(ggplot() + 
                            geom_raster(data = predict_585_df, aes(x = x, y = y, fill = layer)) + 
                            scale_fill_gradient2("ENM \nValue",
-                                                low = 'white', high = 'blue4',
+                                                low = 'white', high = 'gray35',
                                                 na.value = NA, limits=c(0, 1)) +
                            geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
                            geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
-                           geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude), size = 3, color = "yellow") +
                            xlab("Longitude") +
                            ylab("Latitude") +
                            ggtitle("SSP585") +
-                           coord_cartesian(xlim = c(-120, -113), ylim = c(42, 49)) +
+                           coord_fixed(xlim = c(-120, -113), ylim = c(42, 49), clip = "on")+
                            theme_classic(base_size = 12) +
-                           theme(legend.position = "right"))
+                           theme(legend.position = "right")) 
 
 #change plots
 plot_change_245 <- ggplot() + 
@@ -312,13 +350,17 @@ plot_change_245 <- ggplot() +
                        na.value = NA, midpoint = 0, limits = c(-1,1)) +
   geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
   geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
-  geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude), size = 2, color = 'yellow') +
+  new_scale("fill") +
+  geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude, fill = Ecotype), size = 4, shape = 21, color = 'white') +
+  scale_fill_manual(values = c('darkblue', 'darkgreen', 'darkred')) +
   xlab("Longitude") +
   ylab("Latitude") +
   ggtitle("SSP245") +
-  coord_cartesian(xlim = c(-120, -113), ylim = c(42, 49)) +
+  coord_fixed(xlim = c(-120, -113), ylim = c(42, 49), clip = "on")+
   theme_classic(base_size = 15) +
-  theme(legend.position = "none")
+  theme(legend.position = "none", panel.border = element_rect(color = "black",
+                                                               fill = NA,
+                                                               size = 1))
 
 plot_change_585 <- ggplot() + 
   geom_raster(data = change_585_df, aes(x = x, y = y, fill = layer)) + 
@@ -327,13 +369,17 @@ plot_change_585 <- ggplot() +
                        na.value = NA, midpoint = 0, limits = c(-1,1)) +
   geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
   geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
-  geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude), size = 2, color = 'yellow') +
+  new_scale("fill") +
+  geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude, fill = Ecotype), size = 4, shape = 21, color = 'white') +
+  scale_fill_manual(values = c('darkblue', 'darkgreen', 'darkred')) +
   xlab("Longitude") +
   ylab("Latitude") +
   ggtitle("SSP585") +
-  coord_cartesian(xlim = c(-120, -113), ylim = c(42, 49)) +
+  coord_fixed(xlim = c(-120, -113), ylim = c(42, 49), clip = "on")+
   theme_classic(base_size = 15) +
-  theme(legend.position = "none")
+  theme(legend.position = "none", panel.border = element_rect(color = "black",
+                                                               fill = NA,
+                                                               size = 1))
 
 legend_change <- get_legend(ggplot() + 
                               geom_raster(data = change_585_df, aes(x = x, y = y, fill = layer)) + 
@@ -350,10 +396,12 @@ legend_change <- get_legend(ggplot() +
                               theme_classic(base_size = 12) +
                               theme(legend.position = "right"))
 
-plot_final <- plot_grid(plot_245, plot_585, legend_enm, plot_change_245, plot_change_585, legend_change, ncol = 3, rel_widths = c(1,1,.4,1,1,.4))
+plot_all_enm <- plot_grid(plot_245, plot_585, legend_enm, plot_change_245, plot_change_585, legend_change, ncol = 3, rel_widths = c(1,1,.4,1,1,.4))
 
+#next piece is to combine the present map with the future predictions
+plot_final <- plot_grid(present_enm, plot_all_enm, ncol = 1)
 
-ggsave('../outputs/figures/enm_future.png', plot = plot_final, height = 8, width = 9, units = "in")
+ggsave('../outputs/figures/enm_all.jpeg', plot = plot_final, height = 11, width = 8, units = "in")
 
 
 #next up is to extract the enm values to points, and then compare to the genetic offset values
