@@ -1,6 +1,7 @@
 library(ggplot2)
 library(maps)
 library(mapdata)
+library(ggrepel)
 
 state <- map_data("state")
 
@@ -21,7 +22,7 @@ ca_map <- ggplot(data=idaho, mapping=aes(x=long, y=lat, group=group)) +
   theme_void()
 
 
-sites <- read.csv('../data/legacy_data_nw_man_screened.csv')
+sites <- read.csv('./data/legacy_data_nw_man_screened.csv')
 
 #need to remove duplicates for labels
 sites <- sites[,-2]
