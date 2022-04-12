@@ -23,6 +23,8 @@ full_env$FLOW_Aug <- NULL
 cor_full <- corr.test(full_env, method = "spearman", adjust = "none")
 cor_full$r[cor_full$p > 0.05] <- 0 #this puts blanks in for not significant correlations
 
+corrplot(cor_full$r, order = "FPC", method = "number", type = "lower", tl.cex = 0.7, tl.col = rgb(0, 0, 0))
+
 png('outputs/init_corr.png',   
     width     = 3.25,
     height    = 3.25,
@@ -43,6 +45,7 @@ env_cl <- full_env[, -which(colnames(full_env) %in% highlyCorCol)]
 #retest correlation and save matrix + plot
 cl_cor <- corr.test(env_cl, method = "spearman")
 
+corrplot(cl_cor$r, order = "FPC", method = "number", type = "lower", tl.cex = 0.7, tl.col = rgb(0, 0, 0))
 
 png('outputs/final_corr.png',   
     width     = 3.25,
@@ -76,6 +79,7 @@ colnames(env_final_matrix) <- c('ELEV', 'CANOPY', 'SLOPE', 'CUMDRAINAG',  'Preci
 #retest correlation and save matrix + plot
 cl_cor <- corr.test(env_final_matrix, method = "spearman")
 
+corrplot(cl_cor$r, order = "FPC", method = "number", type = "lower", tl.cex = 0.7, tl.col = rgb(0, 0, 0))
 
 png('outputs/final_corr_strem_swap.png',
     width     = 3.25,
