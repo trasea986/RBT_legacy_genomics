@@ -52,7 +52,7 @@ points <- points %>%
 #this data set of points is much larger than the previous, so going to repeat some of the steps in 10 for cropping bioclim to match this new extent
 #create raster by interpolating the offset values
 #going to crop to save space prior to dealing with correlated variables for bioclim
-points_spatial <-  vect(points, geom=c("Longitude", "Latitude"), crs=projection)
+points_spatial <-  terra::vect(points, geom=c("Longitude", "Latitude"), crs=projection)
 x_min <- xmin(points_spatial)
 x_max <- xmax(points_spatial)
 y_min <- ymin(points_spatial)
@@ -218,6 +218,8 @@ colnames(as.data.frame(enm_model@results))[max.col(as.data.frame(enm_model@resul
 
 model_7 <- enm_model@models[[8]]
 enm_results <- enm_model@models[[8]]@results
+#or if just the one model because of importing above
+#enm_results <- model_7@results
 
 imp <- cbind(row.names(enm_results), enm_results)
 cont <- as.data.frame(imp[16:20,])
@@ -231,6 +233,9 @@ predict_present <- predict(bio_layers_present, model_7, progress = 'text')
 
 #view map
 plot(predict_present)
+
+#save raster
+terra::writeRaster(predict_present, filename = "../outputs/enm/present_enm.tif")
 
 #now to predict with the future variables
 predict_245 <- predict(bio_layers245, model_7, progress = 'text')
