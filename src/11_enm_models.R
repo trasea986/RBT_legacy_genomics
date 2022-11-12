@@ -25,7 +25,7 @@ library(ggnewscale)
 
 #pull in template
 #create list of env data for ind bioclim files 
-bio_files245 <- list.files(path = '../data/ssp245/2081-2100/', pattern = '*.tif', all.files = TRUE, full.names = TRUE, recursive = TRUE)
+bio_files245 <- list.files(path = './data/ssp245/2081-2100/', pattern = '*.tif', all.files = TRUE, full.names = TRUE, recursive = TRUE)
 bio_layers245 <- rast(bio_files245)
 bio_layers245 <- bio_layers245[[c(15, 2, 3, 6, 7)]]
 
@@ -66,19 +66,19 @@ ext_enm <- rast(xmin= (x_min - 0.5), xmax =(x_max + 0.5),
 crs(ext_enm) <- crs(bio_layers245)
 ext_enm <- setValues(ext_enm, 1)
 
-writeRaster(ext_enm, filename = "../outputs/extent_enm.tif", overwrite = TRUE)
+writeRaster(ext_enm, filename = "./outputs/extent_enm.tif", overwrite = TRUE)
 
 #now to bring in env data
-bio_files_present <- list.files(path = '../data/wc2.1_30s_bio/', pattern = '*.tif', all.files = TRUE, full.names = TRUE, recursive = TRUE)
+bio_files_present <- list.files(path = './data/wc2.1_30s_bio/', pattern = '*.tif', all.files = TRUE, full.names = TRUE, recursive = TRUE)
 bio_layers_present <- rast(bio_files_present)
 #note that order here is slightly different between present and future because of the different names conventions of present vs. future data
 bio_layers_present <- bio_layers_present[[c(7, 12, 13, 16, 17)]]
 
-bio_files245 <- list.files(path = '../data/ssp245/2081-2100/', pattern = '*.tif', all.files = TRUE, full.names = TRUE, recursive = TRUE)
+bio_files245 <- list.files(path = './data/ssp245/2081-2100/', pattern = '*.tif', all.files = TRUE, full.names = TRUE, recursive = TRUE)
 bio_layers245 <- rast(bio_files245)
 bio_layers245 <- bio_layers245[[c(15, 2, 3, 6, 7)]]
 
-bio_files585 <- list.files(path = '../data/ssp585/2081-2100/', pattern = '*.tif', all.files = TRUE, full.names = TRUE, recursive = TRUE)
+bio_files585 <- list.files(path = './data/ssp585/2081-2100/', pattern = '*.tif', all.files = TRUE, full.names = TRUE, recursive = TRUE)
 bio_layers585 <- rast(bio_files585)
 bio_layers585 <- bio_layers585[[c(15, 2, 3, 6, 7)]]
 
@@ -86,7 +86,7 @@ bio_layers585 <- bio_layers585[[c(15, 2, 3, 6, 7)]]
 names(bio_layers_present) <- c("wc2_15", "wc2_2",  "wc2_3",  "wc2_6",  "wc2_7")
 
 #for resolution shift, going to crop layers first to save on space
-#ext_enm <- rast('../outputs/extent_enm.tif')
+#ext_enm <- rast('./outputs/extent_enm.tif')
 bio_layers_present <- terra::crop(bio_layers_present, ext_enm)
 bio_layers245 <- terra::crop(bio_layers245, ext_enm)
 bio_layers585 <- terra::crop(bio_layers585, ext_enm)
@@ -109,7 +109,7 @@ tune_args_list  <- list(fc = c("L","Q","LQ","LQH", "H"), rm = c(0.5,1:4))
 enmeval_results <- ENMevaluate(points, bio_layers_present, n.bg=10000, tune.args = tune_args_list, partitions='checkerboard2', algorithm='maxnet')
 
 eval <- eval.results(enmeval_results)
-write.csv(eval, "../outputs/enm_eval_results.csv")
+write.csv(eval, "./outputs/enm_eval_results.csv")
 
 #based on the results from enm eval, the feature classes to be used are LQH or just H (AICc < 2), with AUC slightly higher for LQH, so going with that. The regularization multiplier is 0.5
 
@@ -129,14 +129,14 @@ names(bio_layers245_plot) <- c("Precipitation Seasonality", "Mean Diurnal Temp R
 names(bio_layers_present_plot) <- c("Precipitation Seasonality", "Mean Diurnal Temp Range", "Isothermality", "Min Temp of Coldest Month",  "Temp Annual Range")
 
 #plots for checking names
-#plot(bio_layers585_plot)
-#plot(bio_layers245_plot)
-#plot(bio_layers_present_plot)
+plot(bio_layers585_plot)
+plot(bio_layers245_plot)
+plot(bio_layers_present_plot)
 
 #another option is to extract values for all of these at the site locations and present in a table
 
 #next is to load in legacy sites and extract environmental variables from world clim
-legacy_df <- read.csv('../data/legacy_data_formatted.csv')
+legacy_df <- read.csv('./data/legacy_data_formatted.csv')
 
 #remove duplicate rows
 legacy_df <- legacy_df[!duplicated(legacy_df), ]
@@ -181,7 +181,7 @@ env_at_points$ID <- NULL
 
 names(env_at_points) <- c("Stream", "Present Precipitation Seasonality", "Present Mean Diurnal Temp Range", "Present Isothermality", "Present Min Temp of Coldest Month",  "Present Temp Annual Range",  "245 Precipitation Seasonality", "245 Mean Diurnal Temp Range", "245 Isothermality", "245 Min Temp of Coldest Month",  "245 Temp Annual Range",  "585 Precipitation Seasonality", "585 Mean Diurnal Temp Range", "585 Isothermality", "585 Min Temp of Coldest Month",  "585 Temp Annual Range")
 
-write.csv(env_at_points, "../outputs/enm/env_at_points.csv", row.names = FALSE)
+write.csv(env_at_points, "./outputs/enm/env_at_points.csv", row.names = FALSE)
 
 enm_model <- 
   maxent(x=bio_layers_present,
@@ -203,7 +203,7 @@ enm_model <-
            'askoverwrite=false',
            'replicates=10',
            'replicatetype=crossvalidate'),
-         path = '../outputs/enm')
+         path = './outputs/enm')
 
 
 
@@ -214,7 +214,7 @@ colnames(as.data.frame(enm_model@results))[max.col(as.data.frame(enm_model@resul
 #extract the model
 
 #next line loads in the maxent object if no  longer avalable in the workspace
-#model_7 <- import_maxent(dir = '../outputs/enm', lambdas = 'species_7.lambdas', html = 'species_7.html') #this package can't do replicates, so make sure to figure out the best model below before clearing the maxent object (or save the R object of all of the replicates)
+#model_7 <- import_maxent(dir = './outputs/enm', lambdas = 'species_7.lambdas', html = 'species_7.html') #this package can't do replicates, so make sure to figure out the best model below before clearing the maxent object (or save the R object of all of the replicates)
 
 model_7 <- enm_model@models[[8]]
 enm_results <- enm_model@models[[8]]@results
@@ -225,7 +225,7 @@ imp <- cbind(row.names(enm_results), enm_results)
 cont <- as.data.frame(imp[16:20,])
 colnames(cont) <- c("Variable", "Permuatation Importance")
 cont$Variable_Readable <- c('Precipitation Seasonality (Coefficient of Variation)', 'Mean Diurnal Range (Mean of monthly (max temp - min temp))', 'Isothermality (BIO2/BIO7) (×100)', 'Min Temperature of Coldest Month', 'Temperature Annual Range (BIO5-BIO6)')
-write.csv(cont, '../outputs/enm_contribution_table.csv', row.names = FALSE)
+write.csv(cont, './outputs/enm_contribution_table.csv', row.names = FALSE)
 
 
 #how to predict distribution across the landscape (not sure if i need this to answer my question)
@@ -235,11 +235,25 @@ predict_present <- predict(bio_layers_present, model_7, progress = 'text')
 plot(predict_present)
 
 #save raster
-terra::writeRaster(predict_present, filename = "../outputs/enm/present_enm.tif")
+terra::writeRaster(predict_present, filename = "./outputs/enm/present_enm.tif")
 
-#now to predict with the future variables
+#or load in the raster
+#predict_present <- raster("./outputs/enm/present_enm.tif")
+
+#now to predict with the future variables after quick rename to match model_7
+names(bio_layers245) <- c("wc2_15", "wc2_2",  "wc2_3",  "wc2_6",  "wc2_7")
+names(bio_layers585) <- c("wc2_15", "wc2_2",  "wc2_3",  "wc2_6",  "wc2_7")
+
 predict_245 <- predict(bio_layers245, model_7, progress = 'text')
 predict_585 <- predict(bio_layers585, model_7, progress = 'text')
+
+#save raster
+terra::writeRaster(predict_245, filename = "./outputs/enm/predict_245_enm.tif")
+terra::writeRaster(predict_585, filename = "./outputs/enm/predict_585_enm.tif")
+
+#or load in the raster
+#predict_245 <- raster("./outputs/enm/predict_245_enm.tif")
+#predict_585 <- raster("./outputs/enm/predict_585_enm.tif")
 
 #next steps: calculate and visualize the amount of change
 change_245 <- predict_245 - predict_present
@@ -255,26 +269,18 @@ change_245_df <- as.data.frame(change_245, xy=TRUE)
 change_585_df <- as.data.frame(change_585, xy=TRUE)
 
 #now to make the plots
-#bring in original point locations
-legacy_df <- read.csv('../data/legacy_data_formatted.csv')
-legacy_df <- legacy_df[!duplicated(legacy_df), ]
-legacy_df <- subset(legacy_df, Stream!="Little Jacks Creek -> Jacks Creek - HydroID: 6440" & Stream!="Keithly Creek -> Weiser River - HydroID: 10032" & Stream!="Johnson Creek -> North Fork Boise River - HydroID: 4458")
-legacy_df <- legacy_df[-c(7, 14),]
 
 #bring in state lines
 states_plot <- c("idaho", "washington", "oregon", "montana")
 dmap <- map("state", regions=states_plot, col="transparent", plot=FALSE, fill = TRUE)
 area_poly <- map2SpatialPolygons(dmap, IDs=dmap$names, , proj4string=CRS("+proj=longlat +datum=WGS84"))
-counties <- map_data("county")
-county_sub <- subset(counties, region %in% c("idaho", "washington", "oregon", "montana"))
 
 #plot of present  
 present_enm <- ggplot() + 
-  geom_raster(data = present_df, aes(x = x, y = y, fill = layer)) + 
+  geom_raster(data = present_df, aes(x = x, y = y, fill = present_enm)) + #fill = layer if not imported
   scale_fill_gradient2("ENM Value",
                        low = 'white', high = 'gray35',
                        na.value = NA) +
-  geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
   geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
   xlab("Longitude") +
   ylab("Latitude") +
@@ -291,7 +297,7 @@ present_enm <- present_enm +
   geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude, fill = Ecotype), size = 4, shape = 21, color = 'white') +
   scale_fill_manual(values = c('darkblue', 'darkgreen', 'darkred')) 
 
-ggsave('../outputs/figures/present_enm.png', plot = present_enm, height = 8, width = 8, units = "in")
+ggsave('./outputs/figures/present_enm.png', plot = present_enm, height = 8, width = 8, units = "in")
 
 #predictions
 plot_245 <- ggplot() + 
@@ -299,7 +305,6 @@ plot_245 <- ggplot() +
   scale_fill_gradient2("ENM Value",
                        low = 'white', high = 'gray35',
                        na.value = NA, limits=c(0, 1)) +
-  geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
   geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
   new_scale("fill") +
   geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude, fill = Ecotype), size = 4, shape = 21, color = 'white') +
@@ -318,7 +323,6 @@ plot_585 <- ggplot() +
   scale_fill_gradient2("ENM Value",
                        low = 'white', high = 'grey35',
                        na.value = NA, limits=c(0, 1)) +
-  geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
   geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
   new_scale("fill") +
   geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude, fill = Ecotype), size = 4, shape = 21, color = 'white') +
@@ -338,7 +342,6 @@ legend_enm <- get_legend(ggplot() +
                            scale_fill_gradient2("ENM \nValue",
                                                 low = 'white', high = 'gray35',
                                                 na.value = NA, limits=c(0, 1)) +
-                           geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
                            geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
                            xlab("Longitude") +
                            ylab("Latitude") +
@@ -353,7 +356,6 @@ plot_change_245 <- ggplot() +
   scale_fill_gradient2("ENM Value",
                        low = 'red4', mid = 'white', high = 'blue4',
                        na.value = NA, midpoint = 0, limits = c(-1,1)) +
-  geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
   geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
   new_scale("fill") +
   geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude, fill = Ecotype), size = 4, shape = 21, color = 'white') +
@@ -372,7 +374,6 @@ plot_change_585 <- ggplot() +
   scale_fill_gradient2("ENM Value",
                        low = 'red4', mid = 'white', high = 'blue4',
                        na.value = NA, midpoint = 0, limits = c(-1,1)) +
-  geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
   geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
   new_scale("fill") +
   geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude, fill = Ecotype), size = 4, shape = 21, color = 'white') +
@@ -391,7 +392,6 @@ legend_change <- get_legend(ggplot() +
                               scale_fill_gradient2("ENM \nChange",
                                                    low = 'red4', mid = 'white', high = 'blue4',
                                                    na.value = NA, midpoint = 0, limits = c(-1,1)) +
-                              geom_polygon(data = county_sub, mapping = aes(x = long, y = lat, group = group), fill = NA, color = "darkgray", alpha = 0.5) + #darkgrey county lines
                               geom_polygon(data = area_poly, mapping = aes(x = long, y = lat, group = group), color = "black", fill = NA) + #black lines for the states
                               geom_point(data = legacy_df, mapping = aes(x = Longitude, y = Latitude), size = 2, color = 'yellow') +
                               xlab("Longitude") +
@@ -406,13 +406,45 @@ plot_all_enm <- plot_grid(plot_245, plot_585, legend_enm, plot_change_245, plot_
 #next piece is to combine the present map with the future predictions
 plot_final <- plot_grid(present_enm, plot_all_enm, ncol = 1)
 
-ggsave('../outputs/figures/enm_all.jpeg', plot = plot_final, height = 11, width = 8, units = "in")
+ggsave('./outputs/figures/enm_all_water.jpeg', plot = plot_final, height = 11, width = 8, units = "in")
 
+
+#next up is to repeat the map but with waterways (co-authors to pick final version)
+#bring in the water vector
+nw_lines <- st_read('./data/NorWeST_all_basins.shp')
+ggplot() + geom_sf(nw_lines, aes(fill = "FTYPE"), color = "blue", size = 0.25)
+
+#this isn't going to work... to many lines and the CA portion of the watershed is cut off
+
+
+#next is the inset map (to be added post-R)
+us <- raster::getData("GADM", country = "United States", level = 0)
+ca <- raster::getData("GADM", country = "Canada", level = 0)
+us_df <- fortify(us)
+ca_df <- fortify(ca)
+  
+area_inset <- ggplot() + 
+  geom_raster(data = present_df, aes(x = x, y = y, fill = present_enm)) + #fill = layer if not imported
+  scale_fill_gradient2("ENM Value",
+                       low = 'white', high = 'gray35',
+                       na.value = NA) +
+  geom_polygon(data = us_df, aes(x = long, y = lat, group = group), fill = NA, color = "black", size = 0.5) +
+  geom_polygon(data = ca_df, aes(x = long, y = lat, group = group), fill = NA, color = "black", size = 0.5) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  #ggtitle("Present") +
+  coord_fixed(xlim = c(-130, -100), ylim = c(35, 60), clip = "on")+
+  theme_classic(base_size = 15) +
+  theme(legend.position = "right", panel.border = element_rect(color = "black",
+                                                               fill = NA,
+                                                               size = 1))
+
+ggsave('./outputs/figures/enm_inset.jpeg', plot = area_inset, height = 11, width = 8, units = "in")
 
 #next up is to extract the enm values to points, and then compare to the genetic offset values
 
-g_offset245 <- readRDS('../outputs/g_offset245.RDS')
-g_offset585 <- readRDS('../outputs/g_offset585.RDS')
+g_offset245 <- readRDS('./outputs/g_offset245.RDS')
+g_offset585 <- readRDS('./outputs/g_offset585.RDS')
 #set up offset files
 offset245 <- as.data.frame(g_offset245)
 offset245 <- cbind(offset245, legacy_df)
@@ -459,7 +491,7 @@ rank_change <- cbind(rank_change, row.names(off_enm))
 
 colnames(rank_change)[8] <- "Pop"
 
-write.csv(rank_change, "../outputs/enm_offset_change_sites.csv", row.names = FALSE)
+write.csv(rank_change, "./outputs/enm_offset_change_sites.csv", row.names = FALSE)
 
 ENM_vs_Offset_rank <- ggplot(rank_change, aes(x = rank_offset, y = rank_enm, color = SSP)) +
   geom_point(size = 3, aes(shape= SSP)) +
@@ -480,7 +512,7 @@ legend_compare <- get_legend(ggplot(rank_change, aes(x = rank_offset, y = rank_e
 plot_final_compare <- plot_grid(ENM_vs_Offset, ENM_vs_Offset_rank, legend_compare, ncol = 3, rel_widths = c(1,1,.3))
 
 
-ggsave('../outputs/figures/enm_offset_compare.png', plot = plot_final_compare, height = 6, width = 10, units = "in")
+ggsave('./outputs/figures/enm_offset_compare.png', plot = plot_final_compare, height = 6, width = 10, units = "in")
 
 #other change stats
 #average genetic offset

@@ -7,7 +7,6 @@ library(terra)
 library(gstat)
 library(raster)
 library(auto)
-
 library(ggmap)
 library(maps)
 library(mapdata)
@@ -39,30 +38,32 @@ env_lfmm <- env_lfmm[,-c(6)]
 #older versions of LEA might have needed you to run lfmm2 before, and defined with "object" parameter".
 #run lfmm2, generally needs to be run on a cluster
 #lfmm2_model <- lfmm2(input = rbeta_data, env = env_lfmm, K = 9)
-#saveRDS(lfmm2_model, '../../outputs/no_koot/lfmm2_model_offset.RDS')
-#lfmm2_model <- readRDS('../../outputs/no_koot/lfmm2_model_offset.RDS')
+#saveRDS(lfmm2_model, '../outputs/lfmm2_model_offset.RDS')
+#lfmm2_model <- readRDS('../outputs/lfmm2_model_offset.RDS')
 
 #next, need matrix for the two climate change scenarios. This is going to be very similar to the 01 script with bringing in the legacy data and processing to extract the WorldClim rasters
+
 #set up points and extract
+
 #define projection for this project
 projection <- "EPSG: 4326"
-env_final <- read.csv('../../outputs/no_koot/env_final_pca.csv', stringsAsFactors = FALSE)
-legacy_df <- read.csv('../data/legacy_data_formatted.csv')
+env_final <- read.csv('../../outputs/env_final_pca.csv', stringsAsFactors = FALSE)
+legacy_df <- read.csv('../../data/legacy_data_formatted.csv')
 
 #remove duplicate rows
 legacy_df <- legacy_df[!duplicated(legacy_df), ]
 
-#also remove the duplicated little jack's, keithley, and johnson
-legacy_df <- subset(legacy_df, Stream!="Little Jacks Creek -> Jacks Creek - HydroID: 6440" & Stream!="Keithly Creek -> Weiser River - HydroID: 10032" & Stream!="Johnson Creek -> North Fork Boise River - HydroID: 4458")
+#also remove the duplicated little jack's, keithley, and johnson, and koot pops
+legacy_df <- subset(legacy_df, Stream!="Little Jacks Creek -> Jacks Creek - HydroID: 6440" & Stream!="Keithly Creek -> Weiser River - HydroID: 10032" & Stream!="Johnson Creek -> North Fork Boise River - HydroID: 4458"& Stream!= "Trail Creek -> Deep Creek - HydroID: 8119" & Stream!="South Callahan Creek -> Callahan Creek - HydroID: 6553")
 
 #remove the hatchery and remove lower dry creek
-legacy_df <- legacy_df[-c(7, 14),]
+legacy_df <- legacy_df[-c(7, 12),]
 
 #convert to spatial
 legacy_spatial <- vect(legacy_df, geom=c("Longitude", "Latitude"), crs=projection)
 
 #create list of env data for ind bioclim files 
-bio_files245 <- list.files(path = '../data/ssp245/2081-2100/', pattern = '*.tif', all.files = TRUE, full.names = TRUE, recursive = TRUE)
+bio_files245 <- list.files(path = '../../data/ssp245/2081-2100/', pattern = '*.tif', all.files = TRUE, full.names = TRUE, recursive = TRUE)
 
 #load in the bioclim rasters
 bio_layers245 <- rast(bio_files245)
@@ -87,7 +88,7 @@ write.csv(bio_values245, file = '../../outputs/no_koot/ssp245_env.csv', row.name
 
 #now to do 585/high carbon emission
 #create list of env data for ind bioclim files 
-bio_files585 <- list.files(path = '../data/ssp585/2081-2100/', pattern = '*.tif', all.files = TRUE, full.names = TRUE, recursive = TRUE)
+bio_files585 <- list.files(path = '../../data/ssp585/2081-2100/', pattern = '*.tif', all.files = TRUE, full.names = TRUE, recursive = TRUE)
 bio_layers585 <- rast(bio_files585)
 bio_layers585 <- bio_layers585[[c(15, 2, 3, 6, 7)]]
 bio_values585 <- terra::extract(bio_layers585, legacy_spatial, xy = TRUE, method = 'bilinear')
@@ -100,21 +101,21 @@ bio_values585 <- bio_values585[rep(seq_len(nrow(bio_values585)), each = 20), ]
 write.csv(bio_values585, file = '../../outputs/no_koot/ssp585_env.csv', row.names = FALSE)
 
 
-# Computing genetic offset must run on the cluster
+# Computing genetic offset must run on the cluster. see 10a.
+# 
+# g_offset245 <- genetic.offset(input = rbeta_data, 
+#                            env = env_lfmm, new.env = bio_values245, 
+#                            pop.labels = pop, K = 9)
+# saveRDS(g_offset245, '../outputs/g_offset245.RDS')
+# 
+# g_offset585 <- genetic.offset(input = rbeta_data, 
+#                               env = env_lfmm, new.env = bio_values585, 
+#                               pop.labels = pop, K = 9)
+# saveRDS(g_offset585, '../outputs/g_offset585.RDS')
 
-g_offset245 <- genetic.offset(input = rbeta_data, 
-                           env = env_lfmm, new.env = bio_values245, 
-                           pop.labels = pop, K = 9)
-saveRDS(g_offset245, '../../outputs/no_koot/g_offset245.RDS')
-
-g_offset585 <- genetic.offset(input = rbeta_data, 
-                              env = env_lfmm, new.env = bio_values585, 
-                              pop.labels = pop, K = 9)
-saveRDS(g_offset585, '../../outputs/no_koot/g_offset585.RDS')
-
-
-g_offset245 <- readRDS('../../outputs/no_koot/g_offset245.RDS')
-g_offset585 <- readRDS('../../outputs/no_koot/g_offset585.RDS')
+#after running on cluster, read in the files
+g_offset245 <- readRDS('../outputs/g_offset245.RDS')
+g_offset585 <- readRDS('../outputs/g_offset585.RDS')
 
 #create raster by interpolating the offset values
 #going to crop to save space prior to dealing with correlated variables for bioclim
@@ -131,7 +132,7 @@ ext <- rast(xmin= (x_min - 0.5), xmax =(x_max + 0.5),
 crs(ext) <- crs(bio_layers245$wc2_15)
 ext <- setValues(ext, 1)
 
-writeRaster(ext, filename = "../../outputs/no_koot/extent.tif")
+writeRaster(ext, filename = "../outputs/extent.tif")
 
 #set up offset files
 offset245 <- as.data.frame(g_offset245)
@@ -173,7 +174,7 @@ offset_plot <- ggplot(offset, aes(x = Longitude, y = Latitude, color = offset)) 
   facet_grid(cols = vars(SSP)) +
   theme_classic(base_size = 16)
 
-ggsave('../../outputs/no_koot/figures/offset_plot.tiff', plot = offset_plot, height = 8, width = 10, units = "in")
+ggsave('../outputs/figures/offset_plot.tiff', plot = offset_plot, height = 8, width = 10, units = "in")
 
 
 #one question here is what the maps may look like for the amount the environment is changing
@@ -186,7 +187,7 @@ bio_layers_present <- bio_layers_present[[c(7, 12, 13, 16, 17)]]
 names(bio_layers_present) <- c("wc2_15", "wc2_2",  "wc2_3",  "wc2_6",  "wc2_7")
 
 #for resolution shift, going to crop layers first to save on space
-ext <- rast('../../outputs/no_koot/extent.tif')
+ext <- rast('../outputs/extent.tif')
 bio_layers_present <- terra::crop(bio_layers_present, ext)
 bio_layers245 <- terra::crop(bio_layers245, ext)
 bio_layers585 <- terra::crop(bio_layers585, ext)
@@ -251,7 +252,7 @@ cc15 <- ggplot()+
   coord_cartesian(xlim = c(-120, -113), ylim = c(42, 49)) +
   ggtitle("Precipitation Seasonality (Coefficient of Variation)") +
   theme_classic(base_size = 16)
-ggsave('../../outputs/no_koot/figures/climate_change_plot_15.png', plot = cc15, height = 8, width = 10, units = "in")
+ggsave('../outputs/figures/climate_change_plot_15.png', plot = cc15, height = 8, width = 10, units = "in")
 
 cc2 <- ggplot()+
   geom_raster(data = dif_comb, aes(x = x, y = y, fill = wc2_2)) + 
@@ -267,7 +268,7 @@ cc2 <- ggplot()+
   coord_cartesian(xlim = c(-120, -113), ylim = c(42, 49)) +
   ggtitle("Mean Diurnal Range") +
   theme_classic(base_size = 16)
-ggsave('../../outputs/no_koot/figures/climate_change_plot_2.png', plot = cc2, height = 8, width = 10, units = "in")
+ggsave('../outputs/figures/climate_change_plot_2.png', plot = cc2, height = 8, width = 10, units = "in")
 
 cc3 <- ggplot()+
   geom_raster(data = dif_comb, aes(x = x, y = y, fill = wc2_3)) + 
@@ -283,7 +284,7 @@ cc3 <- ggplot()+
   coord_cartesian(xlim = c(-120, -113), ylim = c(42, 49)) +
   ggtitle("Isothermality") +
   theme_classic(base_size = 16)
-ggsave('../../outputs/no_koot/figures/climate_change_plot_3.png', plot = cc3, height = 8, width = 10, units = "in")
+ggsave('../outputs/figures/climate_change_plot_3.png', plot = cc3, height = 8, width = 10, units = "in")
 
 cc6 <- ggplot()+
   geom_raster(data = dif_comb, aes(x = x, y = y, fill = wc2_6)) + 
@@ -298,7 +299,7 @@ cc6 <- ggplot()+
   coord_cartesian(xlim = c(-120, -113), ylim = c(42, 49)) +
   ggtitle("Min Temperature of Coldest Month") +
   theme_classic(base_size = 16)
-ggsave('../../outputs/no_koot/figures/climate_change_plot_6.png', plot = cc6, height = 8, width = 10, units = "in")
+ggsave('../outputs/figures/climate_change_plot_6.png', plot = cc6, height = 8, width = 10, units = "in")
 
 cc7 <- ggplot()+
   geom_raster(data = dif_comb, aes(x = x, y = y, fill = wc2_7)) + 
@@ -314,4 +315,4 @@ cc7 <- ggplot()+
   coord_cartesian(xlim = c(-120, -113), ylim = c(42, 49)) +
   ggtitle("Temperature Annual Range") +
   theme_classic(base_size = 16)
-ggsave('../../outputs/no_koot/figures/climate_change_plot_7.png', plot = cc7, height = 8, width = 10, units = "in")
+ggsave('../outputs/figures/climate_change_plot_7.png', plot = cc7, height = 8, width = 10, units = "in")

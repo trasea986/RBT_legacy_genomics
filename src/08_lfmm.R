@@ -1,11 +1,11 @@
-#Written by Yara Alshwairikh based on source code from https://rdrr.io/bioc/LEA/man/lfmm2.html
+#modified script based on Yara Alshwairikh based on source code from https://rdrr.io/bioc/LEA/man/lfmm2.html
 #this script needs to be run for each individual environmental variable
 
 library(tidyverse)
 library(reshape2)
 library(vegan)
 library(qqman)
-#library(LEA) #library for LEA might work instead of creating function?
+#library(LEA) #library for LEA might work instead of creating function, but previously had issues
 
 print("lfmm2 analysis") 
 
